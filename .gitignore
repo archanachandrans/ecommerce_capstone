@@ -8,3 +8,5 @@ reports/junit.xml
 reports/rerun*.log
 reports/*.log
 reports/screenshots/
+reports/api-*
+reports/ui-*
