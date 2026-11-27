@@ -1,8 +1,7 @@
 name: e2e-tests
 
-# Runs on a self-hosted runner (your own machine), because the shared test site
-# blocks GitHub-hosted runners. The pull_request trigger is deliberately left out:
-# on a public repo it would let anyone who opens a PR run code on that machine.
+# The pull_request trigger is deliberately left out: on a public repo it would
+# let anyone who opens a PR run code in this workflow.
 on:
   push:
     branches: [main, "capstone/**"]
@@ -10,8 +9,7 @@ on:
 
 jobs:
   test:
-    # Requires a self-hosted runner registered to this repo with the label "capstone".
-    runs-on: [self-hosted, capstone]
+    runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
@@ -30,7 +28,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Install Playwright browser
-        run: python -m playwright install chromium
+        run: python -m playwright install --with-deps chromium
 
       - name: Run API tests
         run: pytest -m api --html=reports/api-report.html --self-contained-html --junitxml=reports/api-results.xml
