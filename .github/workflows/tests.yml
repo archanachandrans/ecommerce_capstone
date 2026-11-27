@@ -1,9 +1,11 @@
 name: Automation Tests
 
+# Runs on a self-hosted runner (your own machine). The pull_request trigger is
+# deliberately NOT used: on a public repo it would let anyone who opens a PR run
+# code on that machine. Only pushes by repo collaborators and manual runs trigger it.
 on:
   push:
-    branches: [main, master]
-  pull_request:
+    branches: [main, "capstone/**"]
   workflow_dispatch:
     inputs:
       suite:
@@ -14,8 +16,13 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # Requires a self-hosted runner registered to this repo with the label "capstone".
+    runs-on: [self-hosted, capstone]
     timeout-minutes: 30
+
+    defaults:
+      run:
+        shell: bash
 
     steps:
       - name: Check out repository
@@ -33,7 +40,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Install Playwright browsers
-        run: python -m playwright install --with-deps chromium
+        run: python -m playwright install chromium
 
       - name: Select test selection
         id: select

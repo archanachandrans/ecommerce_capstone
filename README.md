@@ -109,7 +109,9 @@ In GitHub Actions the whole `reports/` folder is uploaded as the **test-reports*
 
 The workflow `.github/workflows/tests.yml`:
 
-1. runs on every push and pull request to `main`/`master`, and can be started manually (choose `all`, `ui` or `api`);
+**Runner requirement:** it runs on a *self-hosted* runner with the label `capstone`, not on GitHub-hosted runners. The shared site serves a "Please wait while your request is being verified..." page to GitHub's runners, which blocks the tests. To register one: **Settings → Actions → Runners → New self-hosted runner** (Windows), then run the `config` command with the label `capstone` and start `run`.
+
+1. runs on pushes to `main` and `capstone/**` branches, and can be started manually (choose `all`, `ui` or `api`). It does not run on pull requests, to keep other people's code off the self-hosted runner;
 2. installs dependencies and the Playwright Chromium browser;
 3. runs `pytest`;
 4. uploads `reports/` as the `test-reports` artifact (kept for 14 days);
