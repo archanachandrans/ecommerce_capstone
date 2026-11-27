@@ -111,11 +111,11 @@ The workflow `.github/workflows/tests.yml`:
 
 **Runner requirement:** it runs on a *self-hosted* runner with the label `capstone`, not on GitHub-hosted runners. The shared site serves a "Please wait while your request is being verified..." page to GitHub's runners, which blocks the tests. To register one: **Settings → Actions → Runners → New self-hosted runner** (Windows), then run the `config` command with the label `capstone` and start `run`.
 
-1. runs on pushes to `main` and `capstone/**` branches, and can be started manually (choose `all`, `ui` or `api`). It does not run on pull requests, to keep other people's code off the self-hosted runner;
+1. runs on pushes to `main` and `capstone/**` branches, and can be started manually. It does not run on pull requests, to keep other people's code off the self-hosted runner;
 2. installs dependencies and the Playwright Chromium browser;
-3. runs `pytest`;
-4. uploads `reports/` as the `test-reports` artifact (kept for 14 days);
-5. fails the job if `reports/junit.xml` contains any failure or error.
+3. runs the API tests (`pytest -m api`), then the UI tests (`pytest -m ui`) with one automatic rerun per failing test (`pytest-rerunfailures`);
+4. uploads `reports/` as the `test-reports` artifact (kept for 14 days). It contains `api-report.html`, `ui-report.html`, `api-results.xml` and `ui-results.xml`;
+5. the job fails if any test step fails.
 
 ## Scenario coverage
 

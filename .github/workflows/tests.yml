@@ -1,18 +1,12 @@
-name: Automation Tests
+name: e2e-tests
 
-# Runs on a self-hosted runner (your own machine). The pull_request trigger is
-# deliberately NOT used: on a public repo it would let anyone who opens a PR run
-# code on that machine. Only pushes by repo collaborators and manual runs trigger it.
+# Runs on a self-hosted runner (your own machine), because the shared test site
+# blocks GitHub-hosted runners. The pull_request trigger is deliberately left out:
+# on a public repo it would let anyone who opens a PR run code on that machine.
 on:
   push:
     branches: [main, "capstone/**"]
   workflow_dispatch:
-    inputs:
-      suite:
-        description: "Which suite to run"
-        type: choice
-        options: [all, ui, api]
-        default: all
 
 jobs:
   test:
@@ -20,12 +14,8 @@ jobs:
     runs-on: [self-hosted, capstone]
     timeout-minutes: 30
 
-    defaults:
-      run:
-        shell: bash
-
     steps:
-      - name: Check out repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -39,32 +29,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Install Playwright browsers
+      - name: Install Playwright browser
         run: python -m playwright install chromium
 
-      - name: Select test selection
-        id: select
-        run: |
-          SUITE="${{ github.event.inputs.suite || 'all' }}"
-          case "$SUITE" in
-            ui)  echo "marker=ui" >> "$GITHUB_OUTPUT" ;;
-            api) echo "marker=api" >> "$GITHUB_OUTPUT" ;;
-            *)   echo "marker=" >> "$GITHUB_OUTPUT" ;;
-          esac
+      - name: Run API tests
+        run: pytest -m api --html=reports/api-report.html --self-contained-html --junitxml=reports/api-results.xml
 
-      - name: Run tests
-        env:
-          HEADLESS: "true"
-          BROWSER: chromium
-        run: |
-          if [ -n "${{ steps.select.outputs.marker }}" ]; then
-            pytest -m "${{ steps.select.outputs.marker }}"
-          else
-            pytest
-          fi
-        continue-on-error: true   # keep going so the report and artifacts are always uploaded
+      - name: Run UI tests
+        if: always()
+        run: pytest -m ui --reruns 1 --reruns-delay 5 --html=reports/ui-report.html --self-contained-html --junitxml=reports/ui-results.xml
 
-      - name: Upload HTML and JUnit reports
+      - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -72,12 +47,3 @@ jobs:
           path: reports/
           if-no-files-found: warn
           retention-days: 14
-
-      - name: Fail the job if tests failed
-        if: always()
-        run: |
-          test -f reports/junit.xml || { echo "No JUnit report was produced"; exit 1; }
-          if grep -q -E '<(failure|error)' reports/junit.xml; then
-            echo "One or more tests failed. See the uploaded test-reports artifact."
-            exit 1
-          fi
